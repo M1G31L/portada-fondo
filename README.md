@@ -1,5 +1,8 @@
 # Portada Fondo
 
+> ⚠️ **ADVERTENCIA: solo para el Sony Walkman NW-A106.**
+> Esta app está hecha y probada únicamente en ese modelo (Android 11, pantalla 720x1280). En otros dispositivos o pantallas el inicio minimalista puede verse mal, los botones pueden no responder y la app puede no funcionar. Instálala bajo tu propia responsabilidad. El inicio minimalista reemplaza tu pantalla de inicio; si algo falla, usa el comando de "Volver al launcher original" de la guía.
+
 Convierte tu **Sony Walkman NW-A106** (Android 11, 720x1280) en un reproductor limpio: la portada de la canción que suena es el fondo de pantalla, y la pantalla de inicio solo muestra un reloj y una barra de música.
 
 La app trae tres cosas:
@@ -31,7 +34,7 @@ Los estilos que dibujan texto o formas (Tarjeta flotante, Vinilo, Reloj grande, 
 
 ## Lo que necesitas
 
-- Un Walkman NW-A106 (otros Walkman con Android 11 probablemente funcionen, pero solo se probó este).
+- Un **Walkman NW-A106**. No está probado en ningún otro dispositivo.
 - Una PC con Windows, Mac o Linux y un cable USB.
 - Una cuenta de GitHub (gratis), solo para compilar la app.
 - [Android platform-tools (ADB)](https://developer.android.com/tools/releases/platform-tools) descomprimido en una carpeta, por ejemplo `C:\platform-tools`.
