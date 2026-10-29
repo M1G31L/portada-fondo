@@ -154,7 +154,7 @@ class ArtWallpaperService : WallpaperService() {
         }
 
         private fun loadPrefs() {
-            style = prefs.getInt(Prefs.KEY_STYLE, Styles.BLUR_CARD)
+            style = prefs.getInt(Prefs.KEY_STYLE, Styles.COVER)
             dimPct = prefs.getInt(Prefs.KEY_DIM, 35)
             dimPaint.color = Color.argb((dimPct * 255 / 100).coerceIn(0, 255), 0, 0, 0)
         }
@@ -267,7 +267,9 @@ class ArtWallpaperService : WallpaperService() {
 
         private fun refresh() {
             val ctrls = callbacks.keys
-            val c = ctrls.firstOrNull { it.playbackState?.state == PlaybackState.STATE_PLAYING }
+            fun hasTitle(x: MediaController) = !(x.metadata?.getString(MediaMetadata.METADATA_KEY_TITLE).isNullOrEmpty())
+            val c = ctrls.firstOrNull { hasTitle(it) && it.playbackState?.state == PlaybackState.STATE_PLAYING }
+                ?: ctrls.firstOrNull { hasTitle(it) }
                 ?: ctrls.firstOrNull()
             val md = c?.metadata
             if (md != null) {

@@ -42,9 +42,9 @@ object MediaHub {
     val listeners = java.util.concurrent.CopyOnWriteArrayList<() -> Unit>()
 
     fun ensure(ctx: Context) {
-        if (started) return
         val c = ctx.applicationContext
         appCtx = c
+        if (started) return
         try {
             val comp = ComponentName(c, MediaListenerService::class.java)
             val m = c.getSystemService(MediaSessionManager::class.java)
@@ -76,7 +76,9 @@ object MediaHub {
 
     private fun refresh() {
         val ctrls = callbacks.keys
-        val c = ctrls.firstOrNull { it.playbackState?.state == PlaybackState.STATE_PLAYING }
+        fun hasTitle(x: MediaController) = !(x.metadata?.getString(MediaMetadata.METADATA_KEY_TITLE).isNullOrEmpty())
+        val c = ctrls.firstOrNull { hasTitle(it) && it.playbackState?.state == PlaybackState.STATE_PLAYING }
+            ?: ctrls.firstOrNull { hasTitle(it) }
             ?: ctrls.firstOrNull()
         controller = c
         hasSession = c != null
@@ -119,11 +121,18 @@ object MediaHub {
         return null
     }
 
-    fun playPause() {
-        val c = controller ?: return
-        if (playing) c.transportControls.pause() else c.transportControls.play()
+    /** Envía una tecla multimedia al reproductor activo (funciona con cualquier app). */
+    private fun key(code: Int) {
+        val ctx = appCtx ?: return
+        try {
+            val am = ctx.getSystemService(Context.AUDIO_SERVICE) as android.media.AudioManager
+            am.dispatchMediaKeyEvent(android.view.KeyEvent(android.view.KeyEvent.ACTION_DOWN, code))
+            am.dispatchMediaKeyEvent(android.view.KeyEvent(android.view.KeyEvent.ACTION_UP, code))
+        } catch (_: Exception) {
+        }
     }
 
-    fun next() { controller?.transportControls?.skipToNext() }
-    fun prev() { controller?.transportControls?.skipToPrevious() }
+    fun playPause() { key(android.view.KeyEvent.KEYCODE_MEDIA_PLAY_PAUSE) }
+    fun next() { key(android.view.KeyEvent.KEYCODE_MEDIA_NEXT) }
+    fun prev() { key(android.view.KeyEvent.KEYCODE_MEDIA_PREVIOUS) }
 }

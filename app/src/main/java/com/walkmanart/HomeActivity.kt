@@ -70,7 +70,7 @@ class MediaIcon(ctx: Context, var kind: Int) : View(ctx) {
     private val p = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = Color.WHITE }
     override fun onDraw(c: Canvas) {
         val w = width.toFloat(); val h = height.toFloat()
-        val s = minOf(w, h) * 0.46f
+        val s = minOf(w, h) * 0.30f
         val cx = w / 2f; val cy = h / 2f
         fun tri(x: Float, dir: Int, sz: Float) {
             val path = Path()
@@ -161,14 +161,12 @@ class HomeActivity : Activity() {
     private lateinit var progress: ProgressLine
     private lateinit var tPos: TextView
     private lateinit var tDur: TextView
-    private lateinit var ring: BatteryRing
     private lateinit var overlay: ScrollView
     private val ui = Handler(Looper.getMainLooper())
     private val hubListener: () -> Unit = { runOnUiThread { bindNow() } }
     private val ticker = object : Runnable {
         override fun run() {
             tickProgress()
-            ring.refresh()
             ui.postDelayed(this, 500)
         }
     }
@@ -198,114 +196,78 @@ class HomeActivity : Activity() {
         window.statusBarColor = Color.TRANSPARENT
         window.navigationBarColor = Color.TRANSPARENT
 
+        val shadow = { t: TextView -> t.setShadowLayer(6f, 0f, 2f, Color.argb(160, 0, 0, 0)); t }
+
         val root = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
-            setPadding(dp(18), dp(40), dp(18), dp(22))
-            setBackgroundColor(Color.argb(95, 0, 0, 0))
+            setPadding(dp(20), dp(40), dp(20), dp(16))
         }
 
-        // fecha arriba
-        root.addView(TextClock(this).apply {
-            format12Hour = "EEE d MMM"
-            format24Hour = "EEE d MMM"
-            isAllCaps = true
+        // reloj y fecha (tocar para ver las apps)
+        val clock = TextClock(this).apply {
+            format12Hour = "HH:mm"
+            format24Hour = "HH:mm"
+            textSize = 60f
+            setTextColor(Color.WHITE)
+            typeface = Typeface.create("sans-serif-light", Typeface.NORMAL)
+            includeFontPadding = false
+        }
+        val date = TextClock(this).apply {
+            format12Hour = "EEEE, d 'de' MMMM"
+            format24Hour = "EEEE, d 'de' MMMM"
             textSize = 14f
-            letterSpacing = 0.12f
-            setTextColor(gray)
-        })
-        root.addView(BigClock(this), LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT).apply {
-            topMargin = dp(2)
-        })
-
-        // fichas de cristal
-        val tiles = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL; gravity = Gravity.CENTER_VERTICAL }
-        ring = BatteryRing(this)
-        val ringBox = FrameLayout(this).apply { background = glass(22); setPadding(dp(12), dp(12), dp(12), dp(12)) }
-        ringBox.addView(ring, FrameLayout.LayoutParams(dp(56), dp(56)))
-        tiles.addView(ringBox, LinearLayout.LayoutParams(dp(82), dp(82)))
-        val dateBox = LinearLayout(this).apply {
-            orientation = LinearLayout.VERTICAL
-            gravity = Gravity.CENTER_VERTICAL
-            background = glass(22)
-            setPadding(dp(16), 0, dp(16), 0)
+            setTextColor(Color.argb(235, 255, 255, 255))
         }
-        dateBox.addView(TextClock(this).apply {
-            format12Hour = "EEEE"; format24Hour = "EEEE"
-            textSize = 15f; isAllCaps = true; setTextColor(gray); letterSpacing = 0.1f
-        })
-        dateBox.addView(TextClock(this).apply {
-            format12Hour = "d 'de' MMMM"; format24Hour = "d 'de' MMMM"
-            textSize = 20f; setTextColor(Color.WHITE)
-            setTypeface(typeface, Typeface.BOLD)
-        })
-        tiles.addView(dateBox, LinearLayout.LayoutParams(0, dp(82), 1f).apply { marginStart = dp(10) })
-        root.addView(tiles, LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT).apply {
-            topMargin = dp(10)
-        })
+        shadow(clock); shadow(date)
+        root.addView(clock)
+        root.addView(date)
+        val openApps = View.OnClickListener { showOverlay(true) }
+        clock.setOnClickListener(openApps)
+        date.setOnClickListener(openApps)
 
         root.addView(View(this), LinearLayout.LayoutParams(1, 0, 1f))
 
-        // tarjeta de música
-        val now = LinearLayout(this).apply {
+        // barra de musica compacta
+        val bar = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
-            background = glass(26, Color.argb(85, 255, 255, 255))
-            setPadding(dp(14), dp(14), dp(14), dp(10))
+            background = glass(20, Color.argb(120, 10, 10, 16))
+            setPadding(dp(10), dp(10), dp(10), dp(8))
         }
-        val top = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL; gravity = Gravity.CENTER_VERTICAL }
+        val row = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL; gravity = Gravity.CENTER_VERTICAL }
         cover = ImageView(this).apply {
             scaleType = ImageView.ScaleType.CENTER_CROP
             clipToOutline = true
             outlineProvider = object : android.view.ViewOutlineProvider() {
                 override fun getOutline(v: View, o: android.graphics.Outline) {
-                    o.setRoundRect(0, 0, v.width, v.height, dp(14).toFloat())
+                    o.setRoundRect(0, 0, v.width, v.height, dp(10).toFloat())
                 }
             }
         }
-        top.addView(cover, LinearLayout.LayoutParams(dp(68), dp(68)))
-        val col = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL }
-        title = txt("Nada sonando", 17f, Color.WHITE, true).apply { maxLines = 1; ellipsize = TextUtils.TruncateAt.END }
-        artist = txt("", 13f, gray).apply { maxLines = 1; ellipsize = TextUtils.TruncateAt.END }
+        row.addView(cover, LinearLayout.LayoutParams(dp(48), dp(48)))
+        val col = LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+            setOnClickListener { launch("com.sony.walkman.highresmediaplayer") }
+        }
+        title = txt("Nada sonando", 14f, Color.WHITE, true).apply { maxLines = 1; ellipsize = TextUtils.TruncateAt.END }
+        artist = txt("", 12f, gray).apply { maxLines = 1; ellipsize = TextUtils.TruncateAt.END }
         col.addView(title); col.addView(artist)
-        top.addView(col, LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f).apply { marginStart = dp(14) })
-        now.addView(top)
-
-        progress = ProgressLine(this)
-        now.addView(progress, LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, dp(22)).apply { topMargin = dp(10) })
-        val times = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL }
-        tPos = txt("0:00", 11f, gray)
-        tDur = txt("0:00", 11f, gray).apply { gravity = Gravity.END }
-        times.addView(tPos, LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f))
-        times.addView(tDur, LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f))
-        now.addView(times)
-
-        val ctl = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL; gravity = Gravity.CENTER }
+        row.addView(col, LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f).apply { marginStart = dp(10) })
         val prev = MediaIcon(this, MediaIcon.PREV).apply { setOnClickListener { MediaHub.prev() } }
         playIcon = MediaIcon(this, MediaIcon.PLAY).apply { setOnClickListener { MediaHub.playPause() } }
         val next = MediaIcon(this, MediaIcon.NEXT).apply { setOnClickListener { MediaHub.next() } }
-        ctl.addView(prev, LinearLayout.LayoutParams(dp(70), dp(50)))
-        ctl.addView(playIcon, LinearLayout.LayoutParams(dp(90), dp(50)))
-        ctl.addView(next, LinearLayout.LayoutParams(dp(70), dp(50)))
-        now.addView(ctl)
-        root.addView(now, LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT).apply {
-            bottomMargin = dp(16)
-        })
-
-        // dock con iconos reales
-        val dock = LinearLayout(this).apply {
-            orientation = LinearLayout.HORIZONTAL
-            gravity = Gravity.CENTER
-            background = glass(30, Color.argb(60, 255, 255, 255))
-            setPadding(dp(8), dp(12), dp(8), dp(10))
-        }
-        dock.addView(appTile("Spotify", "com.spotify.music") { launch("com.spotify.music") }, tileLp())
-        dock.addView(appTile("Reproductor", "com.sony.walkman.highresmediaplayer") { launch("com.sony.walkman.highresmediaplayer") }, tileLp())
-        dock.addView(appTile("Ajustes", "com.android.settings") { startActivity(Intent(Settings.ACTION_SETTINGS)) }, tileLp())
-        dock.addView(appTile("Apps", null) { showOverlay(true) }, tileLp())
-        root.addView(dock)
+        row.addView(prev, LinearLayout.LayoutParams(dp(40), dp(44)))
+        row.addView(playIcon, LinearLayout.LayoutParams(dp(44), dp(44)))
+        row.addView(next, LinearLayout.LayoutParams(dp(40), dp(44)))
+        bar.addView(row)
+        progress = ProgressLine(this)
+        bar.addView(progress, LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, dp(14)).apply { topMargin = dp(6) })
+        tPos = txt("", 10f, gray)
+        tDur = txt("", 10f, gray)
+        root.addView(bar, LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT))
 
         // capa de todas las apps
         overlay = ScrollView(this).apply {
-            setBackgroundColor(Color.argb(235, 12, 12, 20))
+            setBackgroundColor(Color.argb(240, 12, 12, 20))
             visibility = View.GONE
         }
         val frame = FrameLayout(this)
@@ -398,9 +360,9 @@ class HomeActivity : Activity() {
     }
 
     private fun bindNow() {
-        val has = MediaHub.hasSession && MediaHub.title.isNotEmpty()
+        val has = MediaHub.title.isNotEmpty()
         title.text = if (has) MediaHub.title else "Nada sonando"
-        artist.text = if (has) MediaHub.artist else "Da acceso a notificaciones en Portada Fondo"
+        artist.text = if (has) MediaHub.artist else "Reproduce una canción"
         val a = MediaHub.art
         if (a != null) cover.setImageBitmap(a)
         else cover.setImageDrawable(GradientDrawable().apply { setColor(Color.argb(90, 255, 255, 255)) })

@@ -54,7 +54,7 @@ object Prefs {
     const val KEY_DIM = "dim"
 
     fun style(ctx: Context): Int =
-        ctx.getSharedPreferences(FILE, Context.MODE_PRIVATE).getInt(KEY_STYLE, Styles.BLUR_CARD)
+        ctx.getSharedPreferences(FILE, Context.MODE_PRIVATE).getInt(KEY_STYLE, Styles.COVER)
 
     fun dim(ctx: Context): Int =
         ctx.getSharedPreferences(FILE, Context.MODE_PRIVATE).getInt(KEY_DIM, 35)
