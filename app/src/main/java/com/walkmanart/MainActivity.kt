@@ -110,6 +110,19 @@ class MainActivity : Activity() {
             tryStart(Intent(Settings.ACTION_NOTIFICATION_LISTENER_SETTINGS))
         }, lp(top = 10, height = 52))
 
+        root.addView(label("EXTRAS", 12f, gray, true).apply { setPadding(dp(4), dp(24), 0, dp(8)) })
+        root.addView(button("Usar inicio minimalista", false) {
+            tryStart(Intent(Settings.ACTION_HOME_SETTINGS))
+        }, lp(height = 52))
+        root.addView(label(
+            "Elige \"Inicio minimalista\" como app de inicio. Para volver al de Sony, elige \"Launcher\" en esa misma pantalla.",
+            12f, gray
+        ).apply { setPadding(dp(4), dp(6), dp(4), dp(10)) })
+        root.addView(label(
+            "Widget: mantén pulsada la pantalla de inicio de Sony y agrega \"Ahora suena\" (si tu launcher lo permite).",
+            12f, gray
+        ).apply { setPadding(dp(4), 0, dp(4), 0) })
+
         root.addView(label(
             "Si la portada no aparece, da el acceso a notificaciones y vuelve a elegir el fondo.",
             12f, gray
@@ -145,6 +158,9 @@ class MainActivity : Activity() {
                 Color.parseColor("#00B894"), Color.parseColor("#6C5CE7"), Color.parseColor("#FD79A8")
             )
             Styles.VINYL -> d.colors = intArrayOf(Color.parseColor("#111111"), Color.parseColor("#555555"))
+            Styles.CLOCK -> d.colors = intArrayOf(Color.parseColor("#232526"), Color.parseColor("#414345"))
+            Styles.DAYTIME -> d.colors = intArrayOf(Color.parseColor("#FF8A65"), Color.parseColor("#5C6BC0"))
+            Styles.LIGHT -> d.colors = intArrayOf(Color.parseColor("#F5F7FA"), Color.parseColor("#C3CFE2"))
             else -> d.colors = intArrayOf(Color.parseColor("#FD79A8"), Color.parseColor("#FDCB6E"))
         }
         if (id == Styles.VINYL) d.shape = GradientDrawable.OVAL else d.cornerRadius = dp(14).toFloat()

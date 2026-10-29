@@ -19,6 +19,36 @@
             </intent-filter>
         </activity>
 
+        <activity
+            android:name=".HomeActivity"
+            android:exported="true"
+            android:label="Inicio minimalista"
+            android:launchMode="singleTask"
+            android:stateNotNeeded="true"
+            android:theme="@android:style/Theme.DeviceDefault.Wallpaper.NoTitleBar">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.HOME" />
+                <category android:name="android.intent.category.DEFAULT" />
+            </intent-filter>
+        </activity>
+
+        <receiver
+            android:name=".NowPlayingWidget"
+            android:exported="true"
+            android:label="Ahora suena">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/widget_info" />
+        </receiver>
+
+        <receiver
+            android:name=".WidgetControlReceiver"
+            android:exported="false" />
+
         <service
             android:name=".ArtWallpaperService"
             android:exported="true"

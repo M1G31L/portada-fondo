@@ -30,6 +30,9 @@ object Styles {
     const val AURORA = 2
     const val VINYL = 3
     const val BOKEH = 4
+    const val CLOCK = 5
+    const val DAYTIME = 6
+    const val LIGHT = 7
 }
 
 class StyleInfo(val id: Int, val name: String, val desc: String)
@@ -39,7 +42,10 @@ val ALL_STYLES = listOf(
     StyleInfo(Styles.BLUR_CARD, "Tarjeta flotante", "Portada en una tarjeta sobre fondo desenfocado, con título y artista."),
     StyleInfo(Styles.AURORA, "Aurora", "Luces de colores en movimiento, tomadas de la portada."),
     StyleInfo(Styles.VINYL, "Vinilo", "Un disco que gira con la portada al centro y ondas alrededor."),
-    StyleInfo(Styles.BOKEH, "Bokeh", "Burbujas de luz que suben despacio sobre la portada desenfocada.")
+    StyleInfo(Styles.BOKEH, "Bokeh", "Burbujas de luz que suben despacio sobre la portada desenfocada."),
+    StyleInfo(Styles.CLOCK, "Reloj grande", "Hora enorme y minimalista sobre la portada desenfocada."),
+    StyleInfo(Styles.DAYTIME, "Hora del día", "El degradado cambia con la hora: amanecer, día, tarde y noche."),
+    StyleInfo(Styles.LIGHT, "Modo claro", "Fondo luminoso y suave con la portada en una tarjeta.")
 )
 
 object Prefs {

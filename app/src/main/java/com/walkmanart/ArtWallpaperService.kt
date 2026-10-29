@@ -138,7 +138,13 @@ class ArtWallpaperService : WallpaperService() {
                     }
                 }
                 draw()
-                if (style != Styles.COVER || fade < 1f) handler.postDelayed(this, 33)
+                val delay = when (style) {
+                    Styles.COVER, Styles.LIGHT -> -1L
+                    Styles.CLOCK, Styles.DAYTIME -> 1000L
+                    else -> 33L
+                }
+                if (fade < 1f) handler.postDelayed(this, 33)
+                else if (delay > 0) handler.postDelayed(this, delay)
             }
         }
 
@@ -376,6 +382,24 @@ class ArtWallpaperService : WallpaperService() {
                     c.drawRect(0f, 0f, w, h, dimPaint)
                     drawBokeh(c, t)
                 }
+                Styles.CLOCK -> {
+                    layer(blurPrev, blurCur) { b, a -> drawCover(c, b, a) }
+                    fillPaint.color = Color.argb(120, 0, 0, 0)
+                    c.drawRect(0f, 0f, w, h, fillPaint)
+                    c.drawRect(0f, 0f, w, h, dimPaint)
+                    drawClock(c)
+                }
+                Styles.DAYTIME -> {
+                    drawDaytime(c)
+                    c.drawRect(0f, 0f, w, h, dimPaint)
+                    drawSmallCard(c, false)
+                }
+                Styles.LIGHT -> {
+                    layer(blurPrev, blurCur) { b, a -> drawCover(c, b, a) }
+                    fillPaint.color = Color.argb(215, 250, 250, 252)
+                    c.drawRect(0f, 0f, w, h, fillPaint)
+                    drawSmallCard(c, true)
+                }
             }
         }
 
@@ -416,8 +440,10 @@ class ArtWallpaperService : WallpaperService() {
             cardPaint.shader = null
         }
 
-        private fun drawTexts(c: Canvas, yTop: Float) {
+        private fun drawTexts(c: Canvas, yTop: Float, dark: Boolean = false) {
             if (titleText.isEmpty()) return
+            titlePaint.color = if (dark) Color.parseColor("#1A1A26") else Color.WHITE
+            artistPaint.color = if (dark) Color.argb(190, 26, 26, 38) else Color.argb(190, 255, 255, 255)
             val maxW = width * 0.84f
             titlePaint.textSize = dp(22f)
             artistPaint.textSize = dp(15f)
@@ -507,6 +533,78 @@ class ArtWallpaperService : WallpaperService() {
             // brillo fijo
             c.drawCircle(discCx, discCy, discR, sheenPaint)
             drawTexts(c, discCy + discR * 1.55f)
+        }
+
+        private val clockPaint = TextPaint(Paint.ANTI_ALIAS_FLAG).apply {
+            color = Color.WHITE
+            textAlign = Paint.Align.CENTER
+            typeface = android.graphics.Typeface.create("sans-serif-thin", android.graphics.Typeface.NORMAL)
+        }
+
+        private fun drawClock(c: Canvas) {
+            val cal = java.util.Calendar.getInstance()
+            val hh = String.format("%02d", cal.get(java.util.Calendar.HOUR_OF_DAY))
+            val mm = String.format("%02d", cal.get(java.util.Calendar.MINUTE))
+            clockPaint.textSize = width * 0.40f
+            val x = width / 2f
+            val y = height * 0.34f
+            c.drawText(hh, x, y, clockPaint)
+            c.drawText(mm, x, y + clockPaint.textSize * 0.95f, clockPaint)
+            artistPaint.textSize = dp(15f)
+            titlePaint.textSize = dp(20f)
+            drawTexts(c, height * 0.80f)
+        }
+
+        private val dayHours = floatArrayOf(0f, 6f, 12f, 18f, 22f, 24f)
+        private val dayTop = intArrayOf(
+            0xFF0B1026.toInt(), 0xFFFF8A65.toInt(), 0xFF4FC3F7.toInt(),
+            0xFFFF7043.toInt(), 0xFF0B1026.toInt(), 0xFF0B1026.toInt()
+        )
+        private val dayBot = intArrayOf(
+            0xFF1B2A57.toInt(), 0xFF5C6BC0.toInt(), 0xFF1976D2.toInt(),
+            0xFF6A1B9A.toInt(), 0xFF1B2A57.toInt(), 0xFF1B2A57.toInt()
+        )
+
+        private fun drawDaytime(c: Canvas) {
+            val cal = java.util.Calendar.getInstance()
+            val hr = cal.get(java.util.Calendar.HOUR_OF_DAY) + cal.get(java.util.Calendar.MINUTE) / 60f
+            var i = 0
+            while (i < dayHours.size - 2 && hr >= dayHours[i + 1]) i++
+            val f = ((hr - dayHours[i]) / (dayHours[i + 1] - dayHours[i])).coerceIn(0f, 1f)
+            val top = argb.evaluate(f, dayTop[i], dayTop[i + 1]) as Int
+            val bot = argb.evaluate(f, dayBot[i], dayBot[i + 1]) as Int
+            fillPaint.shader = LinearGradient(0f, 0f, 0f, height.toFloat(), top, bot, Shader.TileMode.CLAMP)
+            c.drawRect(0f, 0f, width.toFloat(), height.toFloat(), fillPaint)
+            fillPaint.shader = null
+            // resplandor con el color de la portada
+            val p = pal()
+            val col = p[0]
+            blobPaint.shader = RadialGradient(
+                width * 0.5f, height * 0.9f, max(width, height) * 0.8f,
+                Color.argb(110, Color.red(col), Color.green(col), Color.blue(col)),
+                Color.argb(0, Color.red(col), Color.green(col), Color.blue(col)),
+                Shader.TileMode.CLAMP
+            )
+            c.drawRect(0f, 0f, width.toFloat(), height.toFloat(), blobPaint)
+            blobPaint.shader = null
+        }
+
+        private fun drawSmallCard(c: Canvas, dark: Boolean) {
+            val size = width * 0.62f
+            val left = (width - size) / 2f
+            val top = height * 0.20f
+            val r = RectF(left, top, left + size, top + size)
+            val radius = dp(24f)
+            if (current != null) {
+                shadowPaint.color = Color.BLACK
+                shadowPaint.setShadowLayer(dp(22f), 0f, dp(10f), Color.argb(if (dark) 70 else 140, 0, 0, 0))
+                c.drawRoundRect(r, radius, radius, shadowPaint)
+            } else {
+                fillPaint.color = if (dark) Color.argb(40, 0, 0, 0) else Color.argb(60, 255, 255, 255)
+                c.drawRoundRect(r, radius, radius, fillPaint)
+            }
+            layer(previous, current) { b, a -> drawRoundedCover(c, b, a, r, radius) }
+            drawTexts(c, r.bottom + dp(46f), dark)
         }
 
         private fun drawBokeh(c: Canvas, t: Float) {

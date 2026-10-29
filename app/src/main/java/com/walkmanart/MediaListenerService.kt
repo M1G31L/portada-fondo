@@ -13,6 +13,7 @@ import android.service.notification.StatusBarNotification
 class MediaListenerService : NotificationListenerService() {
 
     override fun onListenerConnected() {
+        MediaHub.ensure(this)
         try {
             activeNotifications?.forEach { handle(it) }
         } catch (_: Exception) {
