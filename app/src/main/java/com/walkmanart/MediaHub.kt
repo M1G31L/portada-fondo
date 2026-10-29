@@ -27,6 +27,16 @@ object MediaHub {
     @Volatile var art: Bitmap? = null
     @Volatile var playing = false
     @Volatile var hasSession = false
+    @Volatile var duration = 0L
+    private var basePos = 0L
+    private var baseTime = 0L
+    private var speed = 1f
+
+    fun positionNow(): Long {
+        if (!hasSession) return 0L
+        val p = if (playing) basePos + ((android.os.SystemClock.elapsedRealtime() - baseTime) * speed).toLong() else basePos
+        return if (duration > 0) p.coerceIn(0L, duration) else p.coerceAtLeast(0L)
+    }
     private var controller: MediaController? = null
 
     val listeners = java.util.concurrent.CopyOnWriteArrayList<() -> Unit>()
@@ -71,7 +81,13 @@ object MediaHub {
         controller = c
         hasSession = c != null
         playing = c?.playbackState?.state == PlaybackState.STATE_PLAYING
+        c?.playbackState?.let {
+            basePos = it.position
+            baseTime = it.lastPositionUpdateTime
+            speed = it.playbackSpeed
+        }
         val md = c?.metadata
+        duration = md?.getLong(MediaMetadata.METADATA_KEY_DURATION) ?: 0L
         if (md != null) {
             title = md.getString(MediaMetadata.METADATA_KEY_TITLE) ?: ""
             artist = md.getString(MediaMetadata.METADATA_KEY_ARTIST)
